@@ -54,13 +54,25 @@ boardToString (Board fields) = [show (value field) | field <- fields]
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
-changeValue :: Board -> Field -> Value -> Board
-changeValue board field val = [(value f) = val | f <- (fields board), (coords f) == (coords field)]
+changeValue :: Field -> Value -> Field
+changeValue (Field crds val st) newVal = Field crds newVal st
+
+changeFieldValueInBoard :: Board -> Field -> Value -> Board
+changeFieldValueInBoard board@(Board fields) f@(Field crds v s) newVal = Board newFields 
+    where 
+        newFields = (changeValue f newVal) : [x | x <- fields, coords x /= crds]
+
+-- czyli jednak trzeba bedzie wstawic funkcje sortujaca pola
+-- a tak bardzo chcialam tego uniknac :(
 
 
 
 --board = createBoard
 flds = [Field (0,0) Empty Safe, Field (0,1) Ship Hit]
+board1 :: Board
+board1 = Board flds
+f :: Field
+f = Field (0,1) Empty Hit
 
 
 -- EXAMPLES
