@@ -1,6 +1,12 @@
 module Board
     (   createBoard,
-        showBoard
+        showBoard,
+        changeFieldValueInBoard,
+        putShip,
+        Board (..),
+        Value (..),
+        Field (..),
+        Status (..)
     ) where
     
 import Data.List       (sortBy, intercalate)
@@ -46,14 +52,23 @@ combinations (xs:xss) =
 showBoard :: Board -> String
 showBoard board = concat $ map (\x -> intercalate " | " x ++ "\n") strings
     where
-        strings = chunksOf 10 (boardToString board)
-       
-  
-boardToString :: Board -> [String]
-boardToString (Board fields) = [show (value field) | field <- fields]
+        --strings = chunksOf 10 (boardToString board)
+        strings = map (map show) $ boardToSortedVals board
+        
+newCoords :: (Int, Int) -> Int -> Int -> [Field] -> [(Int, Int)]
+--newCoords :: Int -> Int
+-- down right
+newCoords crds dir size fields
+        | (dir == 1) = [coords x | x <- fields, (snd $ coords x) <= ((snd crds) + size), (fst $ coords x) == fst crds]
+        | (dir == 2) = [coords x | x <- fields, (fst $ coords x) <= ((fst crds) + size), (snd $ coords x) == snd crds]
+        | otherwise = []
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+putShip :: Board -> Field -> Int -> Int -> Board
+putShip board@(Board fields) f@(Field crds v s) size dir = Board newFields
+    where
+        newC = newCoords crds dir size fields
+        newFields = [Field newCrd Ship Safe | newCrd <- newC] ++ [x | x <- fields, not (elem (coords x) newC)]
+        
 
 changeValue :: Field -> Value -> Field
 changeValue (Field crds val st) newVal = Field crds newVal st
@@ -70,8 +85,11 @@ boardToSortedVals :: Board -> [[Value]]
 boardToSortedVals (Board fs) =
     map (map value) $
     map (sortBy (\x y -> compare (snd $ coords x) (snd $ coords y))) $
-    chunksOf 3 $
+    chunksOf 10 $
     sortBy (\x y -> compare (fst $ coords x) (fst $ coords y)) fs
+    
+-- nie potrafie nawet wyrazic, jak bardzo nie lubie tego jezyka!
+
 
 --board = createBoard
 flds = [Field (0,0) Empty Safe, Field (0,1) Ship Hit]

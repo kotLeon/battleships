@@ -10,6 +10,13 @@ main = do
     putStrLn $ showBoard board
     putStr "Size of ship?\n> "
     sizeRaw <- getLine
-    putStr "Coordinates:\n> "
+    putStr "Coordinates:\n "
     crdsRaw <- getLine
-    putStrLn $ showBoard board
+    putStr "Direction?:\n "
+    dirRaw <- getLine
+    let newCrds = read crdsRaw :: (Int, Int)
+        dir = read dirRaw :: Int
+        size = read sizeRaw :: Int
+        oldField = Field newCrds Empty Safe
+        newBoard = putShip board oldField  size dir
+    putStrLn $ showBoard newBoard
