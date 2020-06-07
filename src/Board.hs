@@ -1,5 +1,6 @@
 module Board
-    ( someFunc
+    (   createBoard,
+        showBoard
     ) where
     
 import Data.List       (sortBy, intercalate)
@@ -64,8 +65,13 @@ changeFieldValueInBoard board@(Board fields) f@(Field crds v s) newVal = Board n
 
 -- czyli jednak trzeba bedzie wstawic funkcje sortujaca pola
 -- a tak bardzo chcialam tego uniknac :(
-
-
+-- ok, wiec chamsko ja ukradlam z poprzedniego projektu
+boardToSortedVals :: Board -> [[Value]]
+boardToSortedVals (Board fs) =
+    map (map value) $
+    map (sortBy (\x y -> compare (snd $ coords x) (snd $ coords y))) $
+    chunksOf 3 $
+    sortBy (\x y -> compare (fst $ coords x) (fst $ coords y)) fs
 
 --board = createBoard
 flds = [Field (0,0) Empty Safe, Field (0,1) Ship Hit]
@@ -81,10 +87,10 @@ exBoard = Board
     [ Field (1,1) Empty Safe
     , Field (2,1) Empty Safe
     , Field (2,2) Ship Hit
-{-    , Field (2,0) Empty Hit
+    , Field (2,0) Empty Hit
     , Field (1,2) Ship Safe
     , Field (0,0) Ship Hit
     , Field (1,0) Empty Safe
     , Field (0,2) Ship Hit
-    , Field (0,1) Ship Hit-}
+    , Field (0,1) Ship Hit
     ]
