@@ -3,47 +3,53 @@ module Board
         showBoard,
         changeFieldValueInBoard,
         putShip,
+        readDirection,
+        nc,
+        someoneWon,
+        shot,
+        opponentBoard,
         Board (..),
         Value (..),
-        Field (..),
-        Status (..)
+        Field (..)
     ) where
     
-import Data.List       (sortBy, intercalate)
+import Data.List       (sortBy, intercalate, find)
 import Data.List.Split (chunksOf)
 
-{-
-self - explanatory
--}
-data Value = Empty | Ship deriving(Read, Eq)
+-- the board can have fields with values: empty (if there is no ship), ship(if there is a ship), hit (if there is a ship and it 
+-- has been shot by opponent) and miss (if empty field has been shot)
+data Value = Empty | Ship | Hit | Miss deriving(Read, Eq)
 
 instance Show Value where
     show val = case val of
         Empty -> " "
         Ship -> "X"
-
-{-
-because we have fields which were checked
-by other player and those, which were not
--}
-data Status = Safe | Hit deriving(Show, Read, Eq)
+        Hit -> "H"
+        Miss -> "M"
 
 data Field = Field { coords :: (Int, Int), 
-            value :: Value,
-            status :: Status
-            } 
+                     value :: Value
+                   } 
             deriving(Show, Read, Eq)
             
 data Board = Board {fields :: [Field]}
             deriving(Show, Read, Eq)
-            
+
+data Direction = Rght | Down deriving(Show, Eq)
+
+-- is used in putting ship down
+readDirection :: Int -> Direction
+readDirection i
+  | i == 1 = Down
+  | i == 2 = Rght
+  | otherwise = error "Invalid value read from direction"
+
+-- * Moja pierwsza czesc dokumentacji
 createBoard :: Board
 createBoard = Board fields
             where
-                fields = map (\[a, b] -> Field (a,b) Empty Safe) $ combinations [[0..9], [0..9]]
+                fields = map (\[a, b] -> Field (a,b) Empty) $ combinations [[0..9], [0..9]]
 
---Moj Boze, wreszcie zrozumialam o co chodzi
--- nie wiem, jak, ale przynajmniej wiem co O.o
 combinations :: [[a]] -> [[a]]
 combinations []     = [[]]
 combinations (xs:xss) =
@@ -52,63 +58,92 @@ combinations (xs:xss) =
 showBoard :: Board -> String
 showBoard board = concat $ map (\x -> intercalate " | " x ++ "\n") strings
     where
-        --strings = chunksOf 10 (boardToString board)
         strings = map (map show) $ boardToSortedVals board
-        
-newCoords :: (Int, Int) -> Int -> Int -> [Field] -> [(Int, Int)]
---newCoords :: Int -> Int
--- down right
-newCoords crds dir size fields
-        | (dir == 1) = [coords x | x <- fields, (snd $ coords x) <= ((snd crds) + size), (fst $ coords x) == fst crds]
-        | (dir == 2) = [coords x | x <- fields, (fst $ coords x) <= ((fst crds) + size), (snd $ coords x) == snd crds]
-        | otherwise = []
 
-putShip :: Board -> Field -> Int -> Int -> Board
-putShip board@(Board fields) f@(Field crds v s) size dir = Board newFields
+opponentBoard :: Board -> Board
+opponentBoard board@(Board fields) = Board newFields 
+    where 
+        newFields = [if value x == Ship then changeValue x Empty else x | x <- fields]
+
+-- next coordinate regarding what direction for the ship has been chosen
+nc :: (Int, Int) -> Direction -> Int -> [(Int, Int)]
+nc crds dir size
+  | (dir == Down) = [ (i, snd $ crds) | i <- [ fst crds .. fst crds + size - 1 ] ]
+  | (dir == Rght) = [ (fst $ crds, j) | j <- [ snd crds .. snd crds + size - 1 ] ]
+
+-- TODO test if ship isnt too long to put
+putShip :: Board -> (Int, Int) -> Int -> Direction -> Board
+putShip board@(Board fields) crds size dir = Board newFields
     where
-        newC = newCoords crds dir size fields
-        newFields = [Field newCrd Ship Safe | newCrd <- newC] ++ [x | x <- fields, not (elem (coords x) newC)]
+        newC = nc crds dir size
+        newFields = [Field newCrd Ship | newCrd <- newC] ++ [x | x <- fields, not (elem (coords x) newC)]
         
+
+shot :: Board -> Field -> Board
+shot board@(Board fields) f@(Field crds v) = 
+    changeFieldValueInBoard board f v
+    where
+        v = checkIfHit board crds
+
+checkIfHit :: Board -> (Int, Int) -> Value
+checkIfHit board@(Board fields) crds =
+    case r of
+    Just x -> if (value x) == Ship || (value x) == Hit then Hit else  Miss
+    Nothing -> error "Something went wrong"
+    where
+        r = find (\x -> coords x == crds) fields
 
 changeValue :: Field -> Value -> Field
-changeValue (Field crds val st) newVal = Field crds newVal st
+changeValue (Field crds val) newVal = Field crds newVal
 
 changeFieldValueInBoard :: Board -> Field -> Value -> Board
-changeFieldValueInBoard board@(Board fields) f@(Field crds v s) newVal = Board newFields 
+changeFieldValueInBoard board@(Board fields) f@(Field crds v) newVal = Board newFields 
     where 
         newFields = (changeValue f newVal) : [x | x <- fields, coords x /= crds]
 
--- czyli jednak trzeba bedzie wstawic funkcje sortujaca pola
--- a tak bardzo chcialam tego uniknac :(
--- ok, wiec chamsko ja ukradlam z poprzedniego projektu
+
 boardToSortedVals :: Board -> [[Value]]
 boardToSortedVals (Board fs) =
     map (map value) $
     map (sortBy (\x y -> compare (snd $ coords x) (snd $ coords y))) $
     chunksOf 10 $
     sortBy (\x y -> compare (fst $ coords x) (fst $ coords y)) fs
-    
--- nie potrafie nawet wyrazic, jak bardzo nie lubie tego jezyka!
 
+someoneWon :: Board -> Bool
+someoneWon board@(Board fields) = 
+    not $ any (\x -> value x == Ship) fields
 
+-- --------------------- TESTS
 --board = createBoard
-flds = [Field (0,0) Empty Safe, Field (0,1) Ship Hit]
+flds = [Field (0,0) Empty, Field (0,1) Ship]
 board1 :: Board
 board1 = Board flds
 f :: Field
-f = Field (0,1) Empty Hit
+f = Field (0,1) Empty
 
 
 -- EXAMPLES
 exBoard :: Board
 exBoard = Board 
-    [ Field (1,1) Empty Safe
-    , Field (2,1) Empty Safe
-    , Field (2,2) Ship Hit
-    , Field (2,0) Empty Hit
-    , Field (1,2) Ship Safe
-    , Field (0,0) Ship Hit
-    , Field (1,0) Empty Safe
-    , Field (0,2) Ship Hit
-    , Field (0,1) Ship Hit
+    [ Field (1,1) Hit
+    , Field (2,1) Empty
+    , Field (2,2) Ship
+    , Field (2,0) Empty
+    , Field (1,2) Miss
+    , Field (0,0) Ship
+    , Field (1,0) Empty
+    , Field (0,2) Ship
+    , Field (0,1) Ship
+    ]
+
+exBoard2 = Board 
+    [ Field (1,1) Hit
+    , Field (2,1) Empty
+    , Field (2,2) Hit
+    , Field (2,0) Empty
+    , Field (1,2) Miss
+    , Field (0,0) Hit
+    , Field (1,0) Empty
+    , Field (0,2) Hit
+    , Field (0,1) Hit
     ]
