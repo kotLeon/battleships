@@ -37,14 +37,14 @@ data Board = Board {fields :: [Field]}
 
 data Direction = Rght | Down deriving(Show, Eq)
 
--- is used in putting ship down
+-- | readDirection takes Int and return Either Direction Strong; is used in putting ship on board
 readDirection :: Int -> Either Direction String
 readDirection i
   | i == 1 = Left Down
   | i == 2 = Left Rght
   | otherwise = Right "Invalid value read from direction"
 
--- * Moja pierwsza czesc dokumentacji
+-- | createBoard creates empty board
 createBoard :: Board
 createBoard = Board fields
             where
@@ -55,36 +55,39 @@ combinations []     = [[]]
 combinations (xs:xss) =
     [ x:xs' | x <- xs, xs' <- combinations xss ]
   
+-- | showBoard is used in displaying board
 showBoard :: Board -> String
 showBoard board = concat $ map (\x -> intercalate " | " x ++ "\n") strings
     where
         strings = map (map show) $ boardToSortedVals board
 
+-- | opponentBoard takes board and return board without ships
 opponentBoard :: Board -> Board
 opponentBoard board@(Board fields) = Board newFields 
     where 
         newFields = [if value x == Ship then changeValue x Empty else x | x <- fields]
 
--- next coordinate regarding what direction for the ship has been chosen
+-- | nc takes coordinates and finds next coordinate regarding what direction for the ship has been chosen
 nc :: (Int, Int) -> Direction -> Int -> [(Int, Int)]
 nc crds dir size
   | (dir == Down) = [ (i, snd $ crds) | i <- [ fst crds .. fst crds + size - 1 ] ]
   | (dir == Rght) = [ (fst $ crds, j) | j <- [ snd crds .. snd crds + size - 1 ] ]
 
--- TODO test if ship isnt too long to put
+-- | putShip puts ship with given value on the board
 putShip :: Board -> (Int, Int) -> Int -> Direction -> Board
 putShip board@(Board fields) crds size dir = Board newFields
     where
         newC = nc crds dir size
         newFields = [Field newCrd Ship | newCrd <- newC] ++ [x | x <- fields, not (elem (coords x) newC)]
         
-
+-- | shot change value on given coordinate regarding if a ship is there
 shot :: Board -> Field -> Board
 shot board@(Board fields) f@(Field crds v) = 
     changeFieldValueInBoard board f v
     where
         v = checkIfHit board crds
 
+ --  checkIfHit checks if ship is on given cooordinate
 checkIfHit :: Board -> (Int, Int) -> Value
 checkIfHit board@(Board fields) crds =
     case r of
@@ -109,6 +112,7 @@ boardToSortedVals (Board fs) =
     chunksOf 10 $
     sortBy (\x y -> compare (fst $ coords x) (fst $ coords y)) fs
 
+-- | someoneWon chceck if there is any ship on the board
 someoneWon :: Board -> Bool
 someoneWon board@(Board fields) = 
     not $ any (\x -> value x == Ship) fields
