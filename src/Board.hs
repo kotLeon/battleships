@@ -38,11 +38,11 @@ data Board = Board {fields :: [Field]}
 data Direction = Rght | Down deriving(Show, Eq)
 
 -- is used in putting ship down
-readDirection :: Int -> Direction
+readDirection :: Int -> Either Direction String
 readDirection i
-  | i == 1 = Down
-  | i == 2 = Rght
-  | otherwise = error "Invalid value read from direction"
+  | i == 1 = Left Down
+  | i == 2 = Left Rght
+  | otherwise = Right "Invalid value read from direction"
 
 -- * Moja pierwsza czesc dokumentacji
 createBoard :: Board

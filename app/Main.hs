@@ -11,52 +11,32 @@ main = do
     putStrLn $ showBoard board
 
     putStrLn "Player1"
-    -- First ship
-    putStr "Put your 2 field ship\n"
-    putStr "Coordinates: (X,Y)\n"
-    crdsRaw11 <- getLine
-    putStr "Direction?(1-down or 2-right):\n"
-    dirRaw11 <- getLine
-    -- -- Second ship
-    -- putStr "Put your 3 field ship\n"
-    -- putStr "Coordinates: (X,Y)\n"
-    -- crdsRaw12 <- getLine
-    -- putStr "Direction?(1-down or 2-right):\n"
-    -- dirRaw12 <- getLine
+    board11 <- makeShip board 2
 
     putStrLn "Player2"
-    -- First ship
-    putStr "Put your 2 field ship\n"
-    putStr "Coordinates: (X,Y)\n"
-    crdsRaw21 <- getLine
-    putStr "Direction?(1-down or 2-right):\n"
-    dirRaw21 <- getLine
-
-    -- -- Second ship
-    -- putStr "Put your 2 field ship\n"
-    -- putStr "Coordinates: (X,Y)\n"
-    -- crdsRaw22 <- getLine
-    -- putStr "Direction?(1-down or 2-right):\n"
-    -- dirRaw22 <- getLine
-    let crds11 = read crdsRaw11 :: (Int, Int)
-        dir11 = readDirection (read dirRaw11::Int)
-        board11 = putShip board crds11 2 dir11
-
-        -- crds12 = read crdsRaw12 :: (Int, Int)
-        -- dir12 = readDirection (read dirRaw12::Int)
-        -- board12 = putShip board11 crds12 3 dir12
-
-        crds21 = read crdsRaw21 :: (Int, Int)
-        dir21 = readDirection (read dirRaw21::Int)
-        board21 = putShip board2 crds21 2 dir21
-
-        -- crds22 = read crdsRaw22 :: (Int, Int)
-        -- dir22 = readDirection (read dirRaw11::Int)
-        -- board22 = putShip board21 crds22 3 dir22
-
+    board21 <- makeShip board 2
+   
     move board11 board21
     
-    
+makeShip :: Board -> Int -> IO Board
+makeShip board size = do
+    putStr $ "Put your " ++ (show size) ++ " field ship\n"
+    putStr "Coordinates: (X,Y)\n"
+    coordinatesRaw <- getLine
+    putStr "Direction?(1-down or 2-right):\n"
+    directionRaw <- getLine
+
+    let coordinates = read coordinatesRaw :: (Int, Int)
+        direction = readDirection (read directionRaw::Int)
+    case direction of
+        Left (dir) -> do
+            let bb = putShip board coordinates size dir
+            return bb
+        Right (err) -> do
+            putStr $ err ++ "\n"
+            makeShip board size
+
+
 move :: Board -> Board -> IO ()
 move board1 board2 = do
     if someoneWon board1 then putStrLn "Player2 won"
