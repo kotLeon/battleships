@@ -8,9 +8,11 @@ module Board
         someoneWon,
         shot,
         opponentBoard,
+        changeValue, -- for testing purposes
         Board (..),
         Value (..),
-        Field (..)
+        Field (..), 
+        Direction (..) -- for testing purposes
     ) where
     
 import Data.List       (sortBy, intercalate, find)
@@ -37,7 +39,7 @@ data Board = Board {fields :: [Field]}
 
 data Direction = Rght | Down deriving(Show, Eq)
 
--- | readDirection takes Int and return Either Direction Strong; is used in putting ship on board
+-- | readDirection takes Int and return Either Direction String; is used in putting ship on board
 readDirection :: Int -> Either Direction String
 readDirection i
   | i == 1 = Left Down
